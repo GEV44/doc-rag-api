@@ -1,0 +1,11 @@
+NORTHWIND LABS - REMOTE WORK HANDBOOK (SAMPLE DATA: fictional company, invented for this demo)
+
+Core hours. All team members are expected to be reachable between 11:00 and 15:00 in the Central European time zone. Outside core hours people may work flexibly.
+
+Equipment budget. Each employee receives a one-time home-office budget of 600 euros for a desk, chair or monitor. Receipts must be submitted to finance within 30 days of purchase.
+
+Internet and coworking. The company reimburses up to 40 euros per month for home internet. A coworking membership is reimbursed instead of the internet allowance when the manager approves it.
+
+Time off. Full-time employees have 24 paid vacation days per year. Vacation requests should be filed at least two weeks ahead for periods longer than five days. Sick days do not count against vacation.
+
+Security. Laptops must use full-disk encryption and a password manager. Report a lost laptop to the security team within 4 hours.
