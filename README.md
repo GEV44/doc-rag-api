@@ -6,6 +6,24 @@ A small, self-contained FastAPI service: upload `.txt` / `.md` / `.pdf` files, t
 
 > Bundled `sample_data/` is invented demo data (a fictional clinic, shop, company and product). It contains no real information.
 
+## How it works
+
+```mermaid
+flowchart LR
+    U[Client] -->|POST /ingest<br/>PDF · TXT · MD| L[Loaders]
+    L --> C[Sentence-aware chunking<br/>with overlap]
+    C --> I[(BM25 index<br/>+ optional embeddings<br/>DATA_DIR/index.json)]
+    U -->|POST /ask| R[Retrieval<br/>BM25 or hybrid]
+    I --> R
+    R -->|top-k chunks + scores| A{Answer mode}
+    A -->|default| E[Extractive answer<br/>quoted sentences tagged n]
+    A -->|LLM_BASE_URL set| G[LLM answer<br/>context-only prompt]
+    G -.->|on failure| E
+    R -->|no match| N[no_match: honest refusal]
+    E --> O[JSON: answer + cited sources]
+    G --> O
+```
+
 ## Quickstart
 
 ```bash
