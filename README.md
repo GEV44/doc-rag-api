@@ -1,5 +1,7 @@
 # Document Q&A (RAG) API
 
+[![tests](https://github.com/GEV44/doc-rag-api/actions/workflows/tests.yml/badge.svg)](https://github.com/GEV44/doc-rag-api/actions/workflows/tests.yml) ![Python 3.11](https://img.shields.io/badge/python-3.11-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.162-009688) ![no paid APIs](https://img.shields.io/badge/paid%20APIs-none%20required-brightgreen)
+
 A small, self-contained FastAPI service: upload `.txt` / `.md` / `.pdf` files, then ask questions and get an answer **with cited source chunks and scores**. Works with **zero paid services** (BM25 retrieval + extractive answers). An LLM answer step and semantic embeddings are optional and use any OpenAI-compatible endpoint (including local Ollama).
 
 > Bundled `sample_data/` is invented demo data (a fictional clinic, shop, company and product). It contains no real information.
