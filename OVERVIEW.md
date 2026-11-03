@@ -5,7 +5,7 @@ Author: Gevorg Hovhannisyan (Python/ML engineer, Yerevan; GitHub GEV44). Version
 ## 1. What buyers receive
 - Source code: FastAPI service (`/ingest`, `/ask`, `/health`, plus `/documents` list/delete), about 400 lines of Python, in a plain package layout.
 - `requirements.txt` (pinned), `requirements-dev.txt`, `Dockerfile`, `.env.example` (no keys), README with quickstart and curl examples.
-- 24 pytest tests, `scripts/eval.py` (retrieval check), four fictional sample documents.
+- 25 pytest tests, `scripts/eval.py` (retrieval check), four fictional sample documents.
 - Behaviour: upload `.txt`/`.md`/`.pdf` -> sentence-aware chunking with overlap -> BM25 index persisted to `DATA_DIR/index.json` -> `/ask` returns an answer plus cited chunks with scores. Without an LLM the answer is extractive (best-matching sentences, tagged `[n]`).
 - Optional: LLM answers and hybrid semantic retrieval through any OpenAI-compatible endpoint (e.g. local Ollama) via env vars.
 

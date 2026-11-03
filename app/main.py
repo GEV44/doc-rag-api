@@ -1,6 +1,6 @@
 """FastAPI app: /ingest, /ask, /health (+ /documents)."""
 import os
-from typing import List, Optional
+from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
@@ -16,10 +16,10 @@ from .store import Store
 
 class AskRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=2000)
-    top_k: Optional[int] = Field(None, ge=1, le=20)
+    top_k: int | None = Field(None, ge=1, le=20)
 
 
-def create_app(settings: Optional[Settings] = None) -> FastAPI:
+def create_app(settings: Settings | None = None) -> FastAPI:
     cfg = settings or load_settings()
     store = Store(cfg.data_dir)
     state = {"retriever": Retriever(store.chunks)}
@@ -52,8 +52,9 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         return {"deleted": source, "chunks_removed": n}
 
     @app.post("/ingest", dependencies=[Depends(auth)])
-    async def ingest(files: List[UploadFile] = File(...)):
-        results = []
+    async def ingest(files: Annotated[list[UploadFile], File()]):
+        # Validate, chunk and embed every file first, so a bad file in a batch leaves the index untouched.
+        prepared = []
         for f in files:
             name = os.path.basename(f.filename or "")
             data = await f.read()
@@ -71,12 +72,15 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             if cfg.emb_enabled:
                 try:
                     vecs = embed([r["text"] for r in rows], cfg.emb_base_url, cfg.emb_model, cfg.emb_api_key)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001 - any endpoint/network/payload error -> 502
                     raise HTTPException(502, f"Embeddings endpoint failed: {type(e).__name__}")
                 for r, v in zip(rows, vecs):
                     r["embedding"] = v
+            prepared.append((name, rows, len(text)))
+        results = []
+        for name, rows, n_chars in prepared:
             store.replace_document(name, rows)
-            results.append({"source": name, "chunks": len(rows), "characters": len(text)})
+            results.append({"source": name, "chunks": len(rows), "characters": n_chars})
         rebuild()
         return {"ingested": results, "total_chunks": len(store.chunks)}
 
@@ -90,7 +94,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         if cfg.emb_enabled:
             try:
                 qemb = embed([req.question], cfg.emb_base_url, cfg.emb_model, cfg.emb_api_key)[0]
-            except Exception:
+            except Exception:  # noqa: BLE001
                 qemb = None  # fall back to lexical-only
         hits = state["retriever"].search(req.question, k, qemb, cfg.emb_weight)
         if not hits:
@@ -100,7 +104,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             try:
                 answer = llm_answer(req.question, hits, cfg.llm_base_url, cfg.llm_model, cfg.llm_api_key)
                 mode = "llm"
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - any LLM failure falls back to extractive
                 answer = extractive_answer(req.question, hits)
                 warning = f"LLM call failed ({type(e).__name__}); returned extractive answer instead"
         else:

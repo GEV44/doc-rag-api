@@ -1,5 +1,4 @@
 """Answer generation: extractive by default, optional OpenAI-compatible LLM."""
-from typing import Dict, List, Optional
 
 import httpx
 
@@ -9,7 +8,7 @@ from .retrieval import tokenize
 NO_ANSWER = "I could not find anything relevant to that question in the ingested documents."
 
 
-def extractive_answer(question: str, hits: List[Dict], max_sentences: int = 2) -> str:
+def extractive_answer(question: str, hits: list[dict], max_sentences: int = 2) -> str:
     q = set(tokenize(question))
     cands = []
     for rank, h in enumerate(hits):
@@ -32,8 +31,8 @@ def extractive_answer(question: str, hits: List[Dict], max_sentences: int = 2) -
     return " ".join(parts)
 
 
-def llm_answer(question: str, hits: List[Dict], base_url: str, model: str, api_key: str = "",
-               timeout: float = 120, transport: Optional[httpx.BaseTransport] = None) -> str:
+def llm_answer(question: str, hits: list[dict], base_url: str, model: str, api_key: str = "",
+               timeout: float = 120, transport: httpx.BaseTransport | None = None) -> str:
     ctx = "\n\n".join(f"[{i + 1}] ({h['chunk']['source']}) {h['chunk']['text']}" for i, h in enumerate(hits))
     messages = [
         {"role": "system", "content": "Answer ONLY from the numbered context. Cite sources like [1]. "

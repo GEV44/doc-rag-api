@@ -1,13 +1,13 @@
+import itertools
 import json
 
 import httpx
 import pytest
+from conftest import make_client, upload_samples
 
 from app.answer import llm_answer
 from app.chunking import chunk_text
-from app.config import Settings
 from app.retrieval import Retriever, embed
-from conftest import make_client, upload_samples
 
 
 def make_pdf(text: str) -> bytes:
@@ -36,7 +36,7 @@ def test_chunking_respects_size_and_overlaps():
     assert len(chunks) > 3
     assert all(len(c) <= 200 for c in chunks)
     # overlap: the last sentence of chunk n reappears at the start of chunk n+1
-    for a, b in zip(chunks, chunks[1:]):
+    for a, b in itertools.pairwise(chunks):
         assert a.split(". ")[-1].rstrip(".") in b
 
 
@@ -83,6 +83,13 @@ def test_bad_file_type_rejected(client):
     r = client.post("/ingest", files={"files": ("virus.exe", b"MZ...")})
     assert r.status_code == 415
     assert client.get("/health").json()["chunks"] == 0
+
+
+def test_bad_file_in_batch_leaves_index_untouched(client):
+    files = [("files", ("ok.txt", b"The vault code rotates every Friday.")), ("files", ("virus.exe", b"MZ..."))]
+    assert client.post("/ingest", files=files).status_code == 415
+    assert client.get("/documents").json() == []
+    assert client.post("/ask", json={"question": "vault code"}).json()["mode"] == "empty_index"
 
 
 def test_empty_and_corrupt_files_rejected(client):
