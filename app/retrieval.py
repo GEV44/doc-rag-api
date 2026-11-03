@@ -1,13 +1,13 @@
 """BM25 retrieval (default) with optional embedding re-scoring."""
 import math
 import re
-from typing import Dict, List, Optional, Sequence
+from collections.abc import Sequence
 
 import httpx
 from rank_bm25 import BM25Okapi
 
 _TOKEN = re.compile(r"[^\W_]+", re.UNICODE)
-STOP = set("a an the of to in on at for and or is are was were be been it its this that these those "
+STOP = set("a an the of to in on at for and or is are was were be been it its this that these those "  # noqa: SIM905
            "do does did can could i you we they he she my your our their with as by from if so not no "
            "what which who how when where why will would should may".split())
 
@@ -21,7 +21,7 @@ def stem(w: str) -> str:
     return w[:-1] if len(w) > 3 and w.endswith("e") else w
 
 
-def tokenize(text: str) -> List[str]:
+def tokenize(text: str) -> list[str]:
     return [stem(t) for t in (m.lower() for m in _TOKEN.findall(text)) if t not in STOP]
 
 
@@ -31,8 +31,8 @@ def cosine(a: Sequence[float], b: Sequence[float]) -> float:
     return 0.0 if not na or not nb else sum(x * y for x, y in zip(a, b)) / (na * nb)
 
 
-def embed(texts: List[str], base_url: str, model: str, api_key: str = "", timeout: float = 60,
-          transport: Optional[httpx.BaseTransport] = None) -> List[List[float]]:
+def embed(texts: list[str], base_url: str, model: str, api_key: str = "", timeout: float = 60,
+          transport: httpx.BaseTransport | None = None) -> list[list[float]]:
     """Call an OpenAI-compatible /embeddings endpoint (OpenAI, Ollama, vLLM, LM Studio...)."""
     headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
     with httpx.Client(timeout=timeout, transport=transport) as c:
@@ -53,12 +53,12 @@ class PositiveBM25(BM25Okapi):
 
 
 class Retriever:
-    def __init__(self, chunks: List[Dict]):
+    def __init__(self, chunks: list[dict]):
         self.chunks = chunks
         self.bm25 = PositiveBM25([tokenize(c["text"]) or ["_"] for c in chunks]) if chunks else None
 
-    def search(self, query: str, top_k: int = 3, query_emb: Optional[List[float]] = None,
-               emb_weight: float = 0.5) -> List[Dict]:
+    def search(self, query: str, top_k: int = 3, query_emb: list[float] | None = None,
+               emb_weight: float = 0.5) -> list[dict]:
         if not self.chunks:
             return []
         q = tokenize(query)

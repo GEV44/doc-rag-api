@@ -8,10 +8,10 @@ import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient
 
-from app.config import Settings  # noqa: E402
-from app.main import create_app  # noqa: E402
+from app.config import Settings
+from app.main import create_app
 
 CASES = [
     # direct vocabulary overlap
@@ -42,7 +42,10 @@ def main():
     with tempfile.TemporaryDirectory() as d:
         c = TestClient(create_app(Settings(data_dir=d)))
         sd = os.path.join(ROOT, "sample_data")
-        files = [("files", (n, open(os.path.join(sd, n), "rb"))) for n in sorted(os.listdir(sd))]
+        files = []
+        for n in sorted(os.listdir(sd)):
+            with open(os.path.join(sd, n), "rb") as fh:
+                files.append(("files", (n, fh.read())))
         c.post("/ingest", files=files)
         ok_direct = n_direct = ok_para = n_para = ok_oos = n_oos = 0
         lat = []

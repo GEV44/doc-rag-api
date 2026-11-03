@@ -2,7 +2,6 @@
 import json
 import os
 import threading
-from typing import Dict, List
 
 
 class Store:
@@ -10,7 +9,7 @@ class Store:
         self.path = os.path.join(data_dir, "index.json")
         os.makedirs(data_dir, exist_ok=True)
         self._lock = threading.Lock()
-        self.chunks: List[Dict] = []
+        self.chunks: list[dict] = []
         if os.path.exists(self.path):
             with open(self.path, encoding="utf-8") as f:
                 self.chunks = json.load(f)
@@ -21,7 +20,7 @@ class Store:
             json.dump(self.chunks, f, ensure_ascii=False)
         os.replace(tmp, self.path)
 
-    def replace_document(self, source: str, new_chunks: List[Dict]) -> None:
+    def replace_document(self, source: str, new_chunks: list[dict]) -> None:
         with self._lock:
             self.chunks = [c for c in self.chunks if c["source"] != source] + new_chunks
             self._save()
@@ -33,8 +32,8 @@ class Store:
             self._save()
             return n - len(self.chunks)
 
-    def documents(self) -> List[Dict]:
-        docs: Dict[str, int] = {}
+    def documents(self) -> list[dict]:
+        docs: dict[str, int] = {}
         for c in self.chunks:
             docs[c["source"]] = docs.get(c["source"], 0) + 1
         return [{"source": s, "chunks": n} for s, n in sorted(docs.items())]

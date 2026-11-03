@@ -1,6 +1,6 @@
 # Document Q&A (RAG) API
 
-[![tests](https://github.com/GEV44/doc-rag-api/actions/workflows/tests.yml/badge.svg)](https://github.com/GEV44/doc-rag-api/actions/workflows/tests.yml) ![Python 3.11](https://img.shields.io/badge/python-3.11-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.162-009688) ![no paid APIs](https://img.shields.io/badge/paid%20APIs-none%20required-brightgreen)
+[![tests](https://github.com/GEV44/doc-rag-api/actions/workflows/tests.yml/badge.svg)](https://github.com/GEV44/doc-rag-api/actions/workflows/tests.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![Python 3.11](https://img.shields.io/badge/python-3.11-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.162-009688) ![no paid APIs](https://img.shields.io/badge/paid%20APIs-none%20required-brightgreen)
 
 A small, self-contained FastAPI service: upload `.txt` / `.md` / `.pdf` files, then ask questions and get an answer **with cited source chunks and scores**. Works with **zero paid services** (BM25 retrieval + extractive answers). An LLM answer step and semantic embeddings are optional and use any OpenAI-compatible endpoint (including local Ollama).
 
@@ -44,7 +44,7 @@ Docker: `docker build -t doc-rag-api . && docker run -p 8000:8000 -v ragdata:/da
 | GET | `/documents` | list ingested documents |
 | DELETE | `/documents/{name}` | remove a document |
 
-Re-uploading a file with the same name replaces it. The index is saved to `DATA_DIR/index.json` and reloaded on start.
+Re-uploading a file with the same name replaces it. If any file in a batch is rejected, nothing from that batch is stored. The index is saved to `DATA_DIR/index.json` and reloaded on start.
 
 ## curl examples (real output from a run against `sample_data/`)
 
@@ -103,7 +103,7 @@ Local Ollama: `LLM_BASE_URL=http://localhost:11434/v1 LLM_MODEL=llama3.2` and `E
 
 ```bash
 pip install -r requirements-dev.txt
-python -m pytest -q          # 24 tests
+python -m pytest -q          # 25 tests
 python scripts/eval.py       # small retrieval check on the sample corpus
 ```
 The LLM and embeddings paths are tested against mocked HTTP only (see OVERVIEW.md, limitations).
@@ -114,3 +114,7 @@ The LLM and embeddings paths are tested against mocked HTTP only (see OVERVIEW.m
 app/        main.py (routes) chunking.py loaders.py retrieval.py answer.py store.py config.py
 tests/      pytest suite      scripts/eval.py   sample_data/ (fictional)
 ```
+
+## License
+
+MIT, see [LICENSE](LICENSE).

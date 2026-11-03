@@ -26,7 +26,7 @@ def load_text(filename: str, data: bytes) -> str:
         try:
             reader = PdfReader(io.BytesIO(data))
             text = "\n\n".join((p.extract_text() or "") for p in reader.pages)
-        except Exception as e:  # pypdf raises several error types on malformed files
+        except Exception as e:  # noqa: BLE001 - pypdf raises several error types on malformed files
             raise EmptyDocument(f"Could not read PDF ({type(e).__name__})")
     else:
         text = data.decode("utf-8", errors="replace")
