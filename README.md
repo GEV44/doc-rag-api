@@ -114,3 +114,8 @@ The LLM and embeddings paths are tested against mocked HTTP only (see OVERVIEW.m
 app/        main.py (routes) chunking.py loaders.py retrieval.py answer.py store.py config.py
 tests/      pytest suite      scripts/eval.py   sample_data/ (fictional)
 ```
+
+## Need something like this?
+
+Built by **Gevorg Hovhannisyan**, AI engineer in Yerevan (RAG assistants, LLM agents, bots, automations, AI video).
+[Portfolio](https://gev44.github.io) · [Telegram @hovhannisyan77](https://t.me/hovhannisyan77)
