@@ -10,7 +10,7 @@ from .answer import NO_ANSWER, extractive_answer, llm_answer
 from .chunking import chunk_text
 from .config import Settings, load_settings
 from .loaders import EmptyDocument, UnsupportedType, load_text
-from .retrieval import Retriever, embed
+from .retrieval import Retriever, apply_min_score, embed
 from .store import Store
 
 
@@ -92,7 +92,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
                 qemb = embed([req.question], cfg.emb_base_url, cfg.emb_model, cfg.emb_api_key)[0]
             except Exception:
                 qemb = None  # fall back to lexical-only
-        hits = state["retriever"].search(req.question, k, qemb, cfg.emb_weight)
+        hits = apply_min_score(state["retriever"].search(req.question, k, qemb, cfg.emb_weight), cfg.min_score)
         if not hits:
             return {"answer": NO_ANSWER, "mode": "no_match", "sources": []}
         mode, warning = "extractive", None

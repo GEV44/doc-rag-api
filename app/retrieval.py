@@ -70,3 +70,8 @@ class Retriever:
             scores = [(1 - emb_weight) * (l / mx) + emb_weight * s for l, s in zip(lex, sem)]
         order = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)
         return [{"chunk": self.chunks[i], "score": float(scores[i])} for i in order[:top_k] if scores[i] > 0]
+
+
+def apply_min_score(hits: List[Dict], min_score: float) -> List[Dict]:
+    """Confidence gate: drop hits scoring below min_score. An empty result means 'abstain'."""
+    return [h for h in hits if h["score"] >= min_score] if min_score > 0 else hits

@@ -1,0 +1,92 @@
+{
+  "dataset": "hr_policy",
+  "seed": 0,
+  "retrieval": "bm25",
+  "answer_mode": "extractive",
+  "documents": 7,
+  "chunks": 16,
+  "retrieval_k": 5,
+  "threshold": {
+    "min_score": 5.5221,
+    "tuned_on_dev": 5.5221,
+    "source": "dev"
+  },
+  "dev": {
+    "n_questions": 16,
+    "n_answerable": 13,
+    "n_unanswerable": 3,
+    "hit@1": 0.7692,
+    "hit@3": 0.9231,
+    "hit@5": 0.9231,
+    "mrr": 0.8205,
+    "citation_precision": 0.5385,
+    "citation_recall": 0.7308,
+    "abstention": {
+      "accuracy": 0.6875,
+      "answer_rate_on_answerable": 0.6154,
+      "abstain_rate_on_unanswerable": 1.0,
+      "balanced_accuracy": 0.8077
+    },
+    "by_type": {
+      "direct": {
+        "n": 7,
+        "hit@1": 1.0,
+        "hit@3": 1.0
+      },
+      "multihop": {
+        "n": 2,
+        "hit@1": 1.0,
+        "hit@3": 1.0
+      },
+      "paraphrase": {
+        "n": 4,
+        "hit@1": 0.25,
+        "hit@3": 0.75
+      }
+    }
+  },
+  "test": {
+    "n_questions": 21,
+    "n_answerable": 18,
+    "n_unanswerable": 3,
+    "hit@1": 0.8333,
+    "hit@3": 1.0,
+    "hit@5": 1.0,
+    "mrr": 0.9074,
+    "citation_precision": 0.75,
+    "citation_recall": 0.8889,
+    "abstention": {
+      "accuracy": 0.6667,
+      "answer_rate_on_answerable": 0.6111,
+      "abstain_rate_on_unanswerable": 1.0,
+      "balanced_accuracy": 0.8056
+    },
+    "by_type": {
+      "direct": {
+        "n": 11,
+        "hit@1": 1.0,
+        "hit@3": 1.0
+      },
+      "multihop": {
+        "n": 2,
+        "hit@1": 1.0,
+        "hit@3": 1.0
+      },
+      "paraphrase": {
+        "n": 5,
+        "hit@1": 0.4,
+        "hit@3": 1.0
+      }
+    },
+    "abstention_live_check": {
+      "accuracy": 0.6667,
+      "n": 21
+    }
+  },
+  "dev_threshold_sweep_note": "threshold = best balanced accuracy on dev (ties: lowest)",
+  "latency_ms": {
+    "p50": 3.28,
+    "p95": 5.61,
+    "n": 37
+  }
+}

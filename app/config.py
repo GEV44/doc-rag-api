@@ -32,6 +32,7 @@ class Settings:
     emb_model: str = ""
     emb_api_key: str = ""
     emb_weight: float = 0.5
+    min_score: float = 0.0
 
     @property
     def llm_enabled(self) -> bool:
@@ -57,4 +58,5 @@ def load_settings() -> Settings:
         emb_model=os.getenv("EMBEDDINGS_MODEL", ""),
         emb_api_key=os.getenv("EMBEDDINGS_API_KEY", ""),
         emb_weight=_float("EMBEDDINGS_WEIGHT", 0.5),
+        min_score=_float("MIN_SCORE", 0.0),
     )

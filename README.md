@@ -4,7 +4,41 @@
 
 A small, self-contained FastAPI service: upload `.txt` / `.md` / `.pdf` files, then ask questions and get an answer **with cited source chunks and scores**. Works with **zero paid services** (BM25 retrieval + extractive answers). An LLM answer step and semantic embeddings are optional and use any OpenAI-compatible endpoint (including local Ollama).
 
-> Bundled `sample_data/` is invented demo data (a fictional clinic, shop, company and product). It contains no real information.
+> Bundled `sample_data/` is invented example data (a fictional clinic, shop, company and product). It contains no real information.
+
+## Evaluation
+
+Retrieval quality is measured, not claimed. `eval/run_eval.py` ingests three bundled document sets (22 fictional documents: SaaS help center, HR policy, appliance warranty) through the service's own `/ingest` and `/ask`, asks 109 questions with gold answers and gold source passages, and reports:
+
+- **Retrieval**: hit@1 / hit@3 / hit@5 and MRR against the gold passage (chunk level).
+- **Citations**: precision and recall of the `[n]` chunks the answer cites vs the gold chunks.
+- **Answerability**: does it say "not found" when the answer is not in the documents (about 17% of questions are unanswerable)? Uses the `MIN_SCORE` confidence threshold, tuned on a separate dev split and reported on the test split.
+- **Latency**: p50 / p95 per `/ask` call.
+
+Results on the **test split** (BM25 retrieval, extractive answers, no network, seed 0):
+
+| Dataset | Questions (answerable + not) | hit@1 | hit@3 | hit@5 | MRR | Citation precision / recall | Answerability (answers / abstains) | MIN_SCORE | Latency p50 / p95 |
+|---|---|---|---|---|---|---|---|---|---|
+| helpdesk | 17 + 3 | 76.5% | 94.1% | 94.1% | 0.853 | 79.4% / 85.3% | 55.0% (47% / 100%) | 7.06 | 3.2 / 4.9 ms |
+| hr_policy | 18 + 3 | 83.3% | 100.0% | 100.0% | 0.907 | 75.0% / 88.9% | 66.7% (61% / 100%) | 5.52 | 2.8 / 4.1 ms |
+| warranty | 18 + 3 | 83.3% | 100.0% | 100.0% | 0.917 | 61.1% / 88.9% | 95.2% (94% / 100%) | 3.04 | 3.7 / 5.4 ms |
+
+What the numbers say: the right passage is almost always in the top 3, and paraphrased questions are where plain BM25 loses rank 1 (paraphrase hit@1 is 40-60%, hit@3 80-100%). The abstention threshold never lets an unanswerable question through, but a single absolute BM25 score is a blunt gate: on the two larger-vocabulary sets it also refuses roughly 40-53% of answerable questions. The best threshold differs per corpus, so tune it on your own documents (below). The test splits are small (20-21 questions each), so read single percentage points with care. Latency is wall-clock and machine dependent; everything else is deterministic. Full reports: `eval/reports/<dataset>.md` and `.json`.
+
+Reproduce (one command, seconds, no network):
+
+```bash
+python eval/run_eval.py --offline
+```
+
+Run it on your own documents: create a folder with `docs/` (your `.md`, `.txt` or `.pdf` files) and `questions.jsonl`, one line per question:
+
+```json
+{"id": "q1", "split": "dev", "type": "direct", "question": "How long is the warranty?", "answer": "Two years.",
+ "sources": [{"doc": "warranty.md", "section": "Coverage", "evidence": "exact sentence copied from the document"}]}
+```
+
+Use `"sources": []` for questions the documents cannot answer, and mark about 40% of the questions `"split": "dev"` and the rest `"test"`. Then `python eval/run_eval.py --dataset path/to/folder` prints the metrics and the `MIN_SCORE` value to set. If `EMBEDDINGS_BASE_URL` / `LLM_BASE_URL` are configured the same command evaluates hybrid retrieval and LLM answers (drop `--offline`); without them those parts are skipped. CI runs the suite on every push and fails if test hit@3 falls below `eval/baseline.json`.
 
 ## How it works
 
@@ -92,6 +126,7 @@ Before anything is ingested, `/ask` returns `"mode": "empty_index"` with an expl
 | `DATA_DIR` | `./data` | where `index.json` is stored |
 | `CHUNK_SIZE` / `CHUNK_OVERLAP` | 500 / 100 | characters per chunk / overlap carried to next chunk |
 | `TOP_K` | 3 | default number of chunks returned |
+| `MIN_SCORE` | 0 (off) | drop chunks scoring below this; if none remain the answer is `no_match`. Tune with `eval/run_eval.py` |
 | `MAX_UPLOAD_MB` | 10 | per-file upload limit |
 | `API_KEY` | empty | if set, require header `X-API-Key` on everything except `/health` |
 | `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY` | empty | enable LLM answers via `{base}/chat/completions` |
@@ -103,7 +138,8 @@ Local Ollama: `LLM_BASE_URL=http://localhost:11434/v1 LLM_MODEL=llama3.2` and `E
 
 ```bash
 pip install -r requirements-dev.txt
-python -m pytest -q          # 24 tests
+python -m pytest -q          # 35 tests (API + evaluation metrics)
+python eval/run_eval.py --offline --check   # evaluation suite, fails below eval/baseline.json
 python scripts/eval.py       # small retrieval check on the sample corpus
 ```
 The LLM and embeddings paths are tested against mocked HTTP only (see OVERVIEW.md, limitations).
@@ -113,6 +149,7 @@ The LLM and embeddings paths are tested against mocked HTTP only (see OVERVIEW.m
 ```
 app/        main.py (routes) chunking.py loaders.py retrieval.py answer.py store.py config.py
 tests/      pytest suite      scripts/eval.py   sample_data/ (fictional)
+eval/       run_eval.py metrics.py baseline.json datasets/ (docs + questions.jsonl) reports/
 ```
 
 ## Need something like this?

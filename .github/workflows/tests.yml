@@ -17,3 +17,5 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: python -m pytest -q
       - run: python scripts/eval.py
+      - name: Evaluation suite (fails if test hit@3 drops below eval/baseline.json)
+        run: python eval/run_eval.py --offline --check
