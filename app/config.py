@@ -33,6 +33,7 @@ class Settings:
     emb_api_key: str = ""
     emb_weight: float = 0.5
     min_score: float = 0.0
+    rate_limit_per_min: int = 0
 
     @property
     def llm_enabled(self) -> bool:
@@ -59,4 +60,5 @@ def load_settings() -> Settings:
         emb_api_key=os.getenv("EMBEDDINGS_API_KEY", ""),
         emb_weight=_float("EMBEDDINGS_WEIGHT", 0.5),
         min_score=_float("MIN_SCORE", 0.0),
+        rate_limit_per_min=_int("RATE_LIMIT_PER_MIN", 0),
     )

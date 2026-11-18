@@ -2,9 +2,18 @@
 
 [![tests](https://github.com/GEV44/doc-rag-api/actions/workflows/tests.yml/badge.svg)](https://github.com/GEV44/doc-rag-api/actions/workflows/tests.yml) ![Python 3.11](https://img.shields.io/badge/python-3.11-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.162-009688) ![no paid APIs](https://img.shields.io/badge/paid%20APIs-none%20required-brightgreen)
 
-A small, self-contained FastAPI service: upload `.txt` / `.md` / `.pdf` files, then ask questions and get an answer **with cited source chunks and scores**. Works with **zero paid services** (BM25 retrieval + extractive answers). An LLM answer step and semantic embeddings are optional and use any OpenAI-compatible endpoint (including local Ollama).
+A small, self-contained FastAPI service: upload `.txt` / `.md` / `.pdf` / `.docx` files, then ask questions (English, Russian or Armenian) and get an answer **with cited source chunks, page / section references and scores**. Works with **zero paid services** (BM25 retrieval + extractive answers). An LLM answer step and semantic embeddings are optional and use any OpenAI-compatible endpoint (including local Ollama).
 
 > Bundled `sample_data/` is invented example data (a fictional clinic, shop, company and product). It contains no real information.
+
+## Features
+
+- **Page and section citations**: every source in an `/ask` answer carries `page` (PDF page number), `section` (nearest Markdown / DOCX heading) and a ready-to-show `citation` string such as `handbook.pdf, p. 4` or `policy.md, section 'Refunds'`.
+- **English / Russian / Armenian**: script-based language detection (`language` field in the response), RU and HY stop-words and case-ending stemming so inflected forms match in BM25, Armenian sentence mark support, and "not found" replies in the question's language.
+- **DOCX upload** with type and content validation (extension allow-list, `%PDF` / zip signature check, per-file size limit, 415 / 422 / 413 errors).
+- **Confidence threshold** (`MIN_SCORE`): below it the API says it has no answer instead of guessing.
+- **API key + rate limiting**: `API_KEY` (header `X-API-Key`) and `RATE_LIMIT_PER_MIN` sliding-window limit per key or IP, `429` with `Retry-After`.
+- **Retrieval evaluation** harness with labeled sets (below), a Dockerfile and `docker-compose.yml`.
 
 ## Evaluation
 
@@ -66,15 +75,15 @@ pip install -r requirements.txt
 uvicorn app.main:create_app --factory --port 8000      # docs at http://localhost:8000/docs
 ```
 
-Docker: `docker build -t doc-rag-api . && docker run -p 8000:8000 -v ragdata:/data doc-rag-api` (Dockerfile provided; not built or run during authoring, see OVERVIEW.md).
+Docker: `docker compose up --build` (optional `.env`, data in the `ragdata` volume), or `docker build -t doc-rag-api . && docker run -p 8000:8000 -v ragdata:/data doc-rag-api`. The image and compose file were not built or run during authoring (see OVERVIEW.md).
 
 ## API
 
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/health` | status, document/chunk counts, active retrieval and answer mode |
-| POST | `/ingest` | multipart upload, field `files` (repeatable). 415 bad type, 422 empty/unreadable, 413 too big |
-| POST | `/ask` | JSON `{"question": "...", "top_k": 3}` -> answer + cited sources |
+| POST | `/ingest` | multipart upload, field `files` (repeatable): `.txt .md .pdf .docx`. 415 bad type, 422 empty/unreadable/wrong content, 413 too big, 429 rate limited |
+| POST | `/ask` | JSON `{"question": "...", "top_k": 3}` -> answer, detected `language`, cited sources (`page`, `section`, `citation`) |
 | GET | `/documents` | list ingested documents |
 | DELETE | `/documents/{name}` | remove a document |
 
@@ -116,7 +125,9 @@ Out-of-scope question (`"Who won the 1998 football world cup?"`):
 ```json
 {"answer":"I could not find anything relevant to that question in the ingested documents.","mode":"no_match","sources":[]}
 ```
-Wrong file type (`bad.exe`): HTTP 415 `{"detail":"bad.exe: Unsupported file type '.exe'. Allowed: .txt, .md, .pdf"}`.
+Wrong file type (`bad.exe`): HTTP 415 `{"detail":"bad.exe: Unsupported file type '.exe'. Allowed: .txt, .md, .pdf, .docx"}`.
+
+Citation fields on each source (new): `"page": 2, "section": null, "citation": "manual.pdf, p. 2"` for PDFs and `"page": null, "section": "Shipping", "citation": "policy.md, section 'Shipping'"` for Markdown / DOCX. Russian and Armenian questions work the same way (`"language": "ru"`).
 Before anything is ingested, `/ask` returns `"mode": "empty_index"` with an explanatory message.
 
 ## Configuration (env vars, see `.env.example`)
@@ -128,6 +139,7 @@ Before anything is ingested, `/ask` returns `"mode": "empty_index"` with an expl
 | `TOP_K` | 3 | default number of chunks returned |
 | `MIN_SCORE` | 0 (off) | drop chunks scoring below this; if none remain the answer is `no_match`. Tune with `eval/run_eval.py` |
 | `MAX_UPLOAD_MB` | 10 | per-file upload limit |
+| `RATE_LIMIT_PER_MIN` | 0 (off) | max `/ask` + `/ingest` requests per minute per API key (or client IP); over the limit returns 429 with `Retry-After` |
 | `API_KEY` | empty | if set, require header `X-API-Key` on everything except `/health` |
 | `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY` | empty | enable LLM answers via `{base}/chat/completions` |
 | `EMBEDDINGS_BASE_URL`, `EMBEDDINGS_MODEL`, `EMBEDDINGS_API_KEY`, `EMBEDDINGS_WEIGHT` | empty / 0.5 | enable hybrid BM25 + cosine retrieval via `{base}/embeddings` |
@@ -138,7 +150,7 @@ Local Ollama: `LLM_BASE_URL=http://localhost:11434/v1 LLM_MODEL=llama3.2` and `E
 
 ```bash
 pip install -r requirements-dev.txt
-python -m pytest -q          # 35 tests (API + evaluation metrics)
+python -m pytest -q          # 58 tests (API, evaluation metrics, citations, multilingual, DOCX, rate limit)
 python eval/run_eval.py --offline --check   # evaluation suite, fails below eval/baseline.json
 python scripts/eval.py       # small retrieval check on the sample corpus
 ```
@@ -147,7 +159,7 @@ The LLM and embeddings paths are tested against mocked HTTP only (see OVERVIEW.m
 ## Layout
 
 ```
-app/        main.py (routes) chunking.py loaders.py retrieval.py answer.py store.py config.py
+app/        main.py (routes) chunking.py loaders.py retrieval.py answer.py store.py config.py langdetect.py ratelimit.py
 tests/      pytest suite      scripts/eval.py   sample_data/ (fictional)
 eval/       run_eval.py metrics.py baseline.json datasets/ (docs + questions.jsonl) reports/
 ```

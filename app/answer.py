@@ -7,6 +7,15 @@ from .chunking import split_sentences
 from .retrieval import tokenize
 
 NO_ANSWER = "I could not find anything relevant to that question in the ingested documents."
+NO_ANSWER_I18N = {
+    "en": NO_ANSWER,
+    "ru": "Я не нашёл в загруженных документах ничего, что относится к этому вопросу.",
+    "hy": "Բեռնված փաստաթղթերում այս հարցին վերաբերող ոչինչ չգտա։",
+}
+
+
+def no_answer(lang: str = "en") -> str:
+    return NO_ANSWER_I18N.get(lang, NO_ANSWER)
 
 
 def extractive_answer(question: str, hits: List[Dict], max_sentences: int = 2) -> str:

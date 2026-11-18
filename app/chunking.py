@@ -2,7 +2,7 @@
 import re
 from typing import List
 
-_SENT = re.compile(r"(?<=[.!?])\s+|\n{2,}")
+_SENT = re.compile(r"(?<=[.!?։])\s+|\n{2,}")
 
 
 _HEADING = re.compile(r"(?m)^(#{1,6}\s.*?)[ \t]*$")
@@ -42,7 +42,16 @@ def chunk_text(text: str, size: int = 500, overlap: int = 100) -> List[str]:
     cur: List[str] = []
     for u in units:
         if cur and len(" ".join(cur + [u])) > size:
+            held = None
+            if len(cur) > 1 and cur[-1].startswith("#"):
+                held = cur.pop()  # never strand a heading at the end of a chunk; it leads the next one
             chunks.append(" ".join(cur))
+            if held:
+                cur = [held]
+                while cur and len(" ".join(cur + [u])) > size:
+                    cur.pop(0)
+                cur.append(u)
+                continue
             carry: List[str] = []
             n = 0
             for prev in reversed(cur):
@@ -60,3 +69,23 @@ def chunk_text(text: str, size: int = 500, overlap: int = 100) -> List[str]:
         if not chunks or tail != chunks[-1]:
             chunks.append(tail)
     return chunks
+
+
+_MD_HEADING = re.compile(r"(?m)^(#{1,6})\s+(.*?)\s*$")
+
+
+def chunk_segments(segments: List[dict], size: int = 500, overlap: int = 100) -> List[dict]:
+    """Chunk loader segments and attach citation metadata: {"text", "page", "section"}.
+    `section` is the nearest Markdown/DOCX heading at or before the chunk (carried across chunks and
+    pages); None when the document has no headings."""
+    out: List[dict] = []
+    section = None
+    for seg in segments:
+        heads = [(f"{m.group(1)} {m.group(2).rstrip('.:')}", m.group(2).rstrip(".:"))
+                 for m in _MD_HEADING.finditer(seg["text"])]
+        for piece in chunk_text(seg["text"], size, overlap):
+            best = max(((piece.rfind(h), t) for h, t in heads if h in piece), default=(-1, None))
+            if best[0] >= 0:
+                section = best[1]
+            out.append({"text": piece, "page": seg.get("page"), "section": section})
+    return out

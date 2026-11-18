@@ -7,13 +7,42 @@ import httpx
 from rank_bm25 import BM25Okapi
 
 _TOKEN = re.compile(r"[^\W_]+", re.UNICODE)
-STOP = set("a an the of to in on at for and or is are was were be been it its this that these those "
-           "do does did can could i you we they he she my your our their with as by from if so not no "
-           "what which who how when where why will would should may".split())
+STOP_EN = set("a an the of to in on at for and or is are was were be been it its this that these those "
+              "do does did can could i you we they he she my your our their with as by from if so not no "
+              "what which who how when where why will would should may".split())
+STOP_RU = set("и в во не что он на я с со как а то все она так его но да ты к у же вы за бы по только её ее "
+              "мне было вот от меня еще нет о из ему теперь когда даже ну вдруг ли если уже или ни быть был "
+              "него до вас нибудь опять уж вам ведь там потом себя ничего ей может они тут где есть "
+              "надо ней для мы тебя их чем была сам чтоб без будто чего раз тоже себе под будет ж тогда кто "
+              "этот того потому этого какой совсем ним здесь этом один почти мой тем чтобы нее сейчас были "
+              "куда зачем всех никогда можно при наконец два об другой хоть после над больше тот через эти "
+              "нас про них какая много разве три эту моя впрочем свою этой перед иногда лучше чуть том нельзя "
+              "такой им более всегда конечно всю между сколько какие".split())
+STOP_HY = set("և եվ է են էր էին ու որ որը որն որոնք այս այդ այն ինչ ինչպես երբ որտեղ ով ում ըստ համար հետ մեջ "
+              "վրա մի նաև բայց կամ թե չէ չի չեն ես դու նա մենք դուք նրանք իմ քո իր մեր ձեր նրա "
+              "որքան ինչքան ինչու".split())
+STOP = STOP_EN | STOP_RU | STOP_HY
+
+_RU_SUF = sorted("ами ями ого его ому ему ыми ими ией ая яя ой ей ый ий ое ее ые ие ых их ам ям ом ем ов ев "
+                 "ью ия ию ии ях ах а я ы и у ю е о ь й".split(), key=len, reverse=True)
+_HY_SUF = sorted("ներից ներով ներին ների ները ներ երի ից ով ում ին ան ու ը ն ի ք վ".split(), key=len, reverse=True)
+
+
+def _strip(w: str, suffixes, min_stem: int) -> str:
+    for suf in suffixes:
+        if w.endswith(suf) and len(w) - len(suf) >= min_stem:
+            return w[: -len(suf)]
+    return w
 
 
 def stem(w: str) -> str:
-    """Tiny suffix stripper (English). Not a real stemmer; matches plurals/tenses."""
+    """Tiny suffix stripper: English plurals/tenses, Russian and Armenian case endings.
+    Not a real stemmer; just enough to make inflected forms of one word meet in BM25."""
+    c = w[0] if w else ""
+    if "\u0400" <= c <= "\u04ff":
+        return _strip(w.replace("ё", "е"), _RU_SUF, 3)
+    if "\u0530" <= c <= "\u058f":
+        return _strip(w, _HY_SUF, 3)
     for suf in ("ing", "ed", "es", "s"):
         if w.endswith(suf) and len(w) - len(suf) >= 3:
             w = w[: -len(suf)]
