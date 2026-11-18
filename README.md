@@ -1,6 +1,18 @@
 # Document Q&A (RAG) API
 
-[![tests](https://github.com/GEV44/doc-rag-api/actions/workflows/tests.yml/badge.svg)](https://github.com/GEV44/doc-rag-api/actions/workflows/tests.yml) ![Python 3.11](https://img.shields.io/badge/python-3.11-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.162-009688) ![no paid APIs](https://img.shields.io/badge/paid%20APIs-none%20required-brightgreen)
+[![tests](https://github.com/GEV44/doc-rag-api/actions/workflows/tests.yml/badge.svg)](https://github.com/GEV44/doc-rag-api/actions/workflows/tests.yml)
+![Python 3.11](https://img.shields.io/badge/python-3.11-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.162-009688)
+![tests 58 passing](https://img.shields.io/badge/tests-58%20passing-brightgreen)
+![License MIT](https://img.shields.io/badge/license-MIT-green)
+![no paid APIs](https://img.shields.io/badge/paid%20APIs-none%20required-brightgreen)
+
+![A Russian question answered with citation chips such as policy.pdf, p. 2, and an Armenian out-of-scope question where the API abstains](docs/assets/hero.svg)
+
+## Why this exists
+
+Chatbots over documents tend to sound sure and cite nothing. This service returns the answer together with the page or section it came from, and says "not found" when the documents do not cover the question.
+It works offline with BM25 and extractive answers, and gets better with an optional LLM or embeddings.
 
 A small, self-contained FastAPI service: upload `.txt` / `.md` / `.pdf` / `.docx` files, then ask questions (English, Russian or Armenian) and get an answer **with cited source chunks, page / section references and scores**. Works with **zero paid services** (BM25 retrieval + extractive answers). An LLM answer step and semantic embeddings are optional and use any OpenAI-compatible endpoint (including local Ollama).
 
@@ -67,7 +79,7 @@ flowchart LR
     G --> O
 ```
 
-## Quickstart
+## Quickstart (60 seconds)
 
 ```bash
 python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate

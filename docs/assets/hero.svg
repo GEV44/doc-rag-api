@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" width="960" height="520" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Document Q&amp;A API: question in Russian, answer with citation chips, and an abstain example</title>
+  <rect width="960" height="520" rx="18" fill="#0e1621"/>
+  <text x="40" y="52" font-size="26" font-weight="700" fill="#ffffff">Ask your documents. Get cited answers.</text>
+  <text x="40" y="78" font-size="14" fill="#8fa5bf">POST /ask  -  BM25 retrieval, EN / RU / HY, abstains when unsure</text>
+
+  <!-- panel 1 -->
+  <rect x="40" y="104" width="430" height="376" rx="14" fill="#141f2e" stroke="#26374e" stroke-width="2"/>
+  <rect x="40" y="104" width="430" height="34" rx="14" fill="#1b2a3d"/><rect x="40" y="124" width="430" height="14" fill="#1b2a3d"/>
+  <rect x="56" y="114" width="46" height="18" rx="5" fill="#2b7a4b"/><text x="79" y="127" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">POST</text>
+  <text x="112" y="127" font-size="13" fill="#d6e3f5" font-family="Consolas, monospace">/ask</text>
+  <text x="440" y="127" font-size="11" fill="#7fe3a3" text-anchor="end">200 OK</text>
+
+  <text x="58" y="164" font-size="11" fill="#8fa5bf">REQUEST</text>
+  <rect x="56" y="172" width="398" height="62" rx="8" fill="#0e1621"/>
+  <text x="68" y="192" font-size="12" fill="#d6e3f5" font-family="Consolas, monospace">{ "question": "Сколько дней отпуска</text>
+  <text x="68" y="210" font-size="12" fill="#d6e3f5" font-family="Consolas, monospace">  положено сотрудникам?", "top_k": 3 }</text>
+
+  <text x="58" y="262" font-size="11" fill="#8fa5bf">RESPONSE  (language: ru, mode: extractive)</text>
+  <rect x="56" y="270" width="398" height="130" rx="8" fill="#0e1621"/>
+  <text x="68" y="292" font-size="13" fill="#ffffff">Сотрудникам с полной занятостью</text>
+  <text x="68" y="311" font-size="13" fill="#ffffff">положено 24 оплачиваемых дня отпуска</text>
+  <text x="68" y="330" font-size="13" fill="#ffffff">в год. [1]</text>
+  <rect x="68" y="350" width="150" height="26" rx="13" fill="#17324f" stroke="#2f6fb0"/>
+  <text x="143" y="367" font-size="12" fill="#9ed2ff" text-anchor="middle">policy.pdf, p. 2</text>
+  <rect x="226" y="350" width="206" height="26" rx="13" fill="#17324f" stroke="#2f6fb0"/>
+  <text x="329" y="367" font-size="12" fill="#9ed2ff" text-anchor="middle">handbook.md, section 'Leave'</text>
+  <text x="58" y="428" font-size="12" fill="#8fa5bf">score 5.35  -  above MIN_SCORE, answer returned</text>
+  <text x="58" y="452" font-size="12" fill="#8fa5bf">Every claim points back to a page or section.</text>
+
+  <!-- panel 2 -->
+  <rect x="490" y="104" width="430" height="376" rx="14" fill="#141f2e" stroke="#26374e" stroke-width="2"/>
+  <rect x="490" y="104" width="430" height="34" rx="14" fill="#1b2a3d"/><rect x="490" y="124" width="430" height="14" fill="#1b2a3d"/>
+  <rect x="506" y="114" width="46" height="18" rx="5" fill="#2b7a4b"/><text x="529" y="127" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">POST</text>
+  <text x="562" y="127" font-size="13" fill="#d6e3f5" font-family="Consolas, monospace">/ask</text>
+  <text x="890" y="127" font-size="11" fill="#ffcf7a" text-anchor="end">200 OK, no_match</text>
+
+  <text x="508" y="164" font-size="11" fill="#8fa5bf">REQUEST</text>
+  <rect x="506" y="172" width="398" height="62" rx="8" fill="#0e1621"/>
+  <text x="518" y="192" font-size="12" fill="#d6e3f5" font-family="Consolas, monospace">{ "question": "Ով հաղթեց աշխարհի</text>
+  <text x="518" y="210" font-size="12" fill="#d6e3f5" font-family="Consolas, monospace">  առաջնությունը 1998-ին՞", "top_k": 3 }</text>
+
+  <text x="508" y="262" font-size="11" fill="#8fa5bf">RESPONSE  (language: hy, mode: no_match)</text>
+  <rect x="506" y="270" width="398" height="130" rx="8" fill="#0e1621"/>
+  <text x="518" y="296" font-size="13" fill="#ffffff">Ներմուծված փաստաթղթերում այդ հարցին</text>
+  <text x="518" y="315" font-size="13" fill="#ffffff">վերաբերող ոչինչ չգտնվեց։</text>
+  <text x="518" y="346" font-size="12" fill="#d6e3f5" font-family="Consolas, monospace">"sources": []</text>
+  <rect x="518" y="360" width="190" height="26" rx="13" fill="#3b2f17" stroke="#b8862f"/>
+  <text x="613" y="377" font-size="12" fill="#ffcf7a" text-anchor="middle">abstains instead of guessing</text>
+  <text x="508" y="428" font-size="12" fill="#8fa5bf">Below the confidence threshold the API says so.</text>
+  <text x="508" y="452" font-size="12" fill="#8fa5bf">No invented answers, no empty citations.</text>
+</svg>
